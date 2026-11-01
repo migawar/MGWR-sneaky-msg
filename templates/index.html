@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smartschool</title>
+    <!-- Smartschool Favicon -->
+    <link rel="icon" href="https://www.smartschool.be/wp-content/uploads/2021/03/cropped-favicon-32x32.png" sizes="32x32">
+    <!-- Socket.IO bibliotheek -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        /* Fake Smartschool Topbalk */
+        header {
+            background-color: #004d73;
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #chat-container {
+            flex: 1;
+            margin: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+        }
+        .message {
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            word-break: break-word;
+        }
+        .message strong {
+            color: #004d73;
+        }
+        #input-area {
+            display: flex;
+            padding: 15px;
+            background-color: #fff;
+            gap: 10px;
+        }
+        #username {
+            width: 120px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #message-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #004d73;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #003352;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <span>Smartschool - MGWR Berichten</span>
+        <span style="font-size: 0.8em; font-weight: normal;">Vakantielokaal</span>
+    </header>
+
+    <div id="chat-container">
+        <div id="messages"></div>
+        <div id="input-area">
+            <input type="text" id="username" placeholder="Je naam" value="Leerling">
+            <input type="text" id="message-input" placeholder="Typ een MGWR bericht..." autocomplete="off">
+            <button onclick="sendMessage()">Verzenden</button>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const usernameInput = document.getElementById('username');
+
+        // Verstuur bericht bij enter
+        messageInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            const username = usernameInput.value.trim() || 'Anoniem';
+
+            if (message !== "") {
+                // Verstuur via het 'msg' event
+                socket.emit('msg', { username: username, message: message });
+                messageInput.value = '';
+            }
+        }
+
+        // Ontvang live 'msg' berichten van de server
+        socket.on('receive_msg', function(data) {
+            const msgElement = document.createElement('div');
+            msgElement.classList.add('message');
+            msgElement.innerHTML = `<strong>${escapeHtml(data.username)}:</strong> ${escapeHtml(data.message)}`;
+            messagesDiv.appendChild(msgElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+
+</body>
+</html>
